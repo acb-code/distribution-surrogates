@@ -12,8 +12,9 @@ Set up of surrogate models and order reduction for stochastic distributions
 7. *7_emulator_interactive_model*: instantiation of interactive model and simulation in tandem to showcase exploration capability with surrogate model
 
 ### Functions and tools
--Custom tools:
--Tools from [1], [2]
+
+* Custom tools:
+* Tools from [1], [2]
 
 ### References:
 [ [1] ](https://royalsocietypublishing.org/doi/abs/10.1098/rspa.2021.0495)

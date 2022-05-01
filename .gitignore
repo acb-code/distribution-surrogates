@@ -1,0 +1,12 @@
+/pyToolbox/
+base_classes.py
+fit_encoder.py
+fit_kpca.py
+fit_manifold.py
+fit_multifidelity_kpca.py
+fit_multifidelity_manifold.py
+fit_multifidelity_pca.py
+fit_pca.py
+multifidelity_rbf.py
+swiss_roll_test.py
+hierarchichal_kriging.py

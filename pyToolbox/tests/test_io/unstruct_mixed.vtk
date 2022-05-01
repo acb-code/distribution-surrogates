@@ -1,0 +1,40 @@
+# vtk DataFile Version 3.0
+Unittest
+ASCII
+DATASET UNSTRUCTURED_GRID
+
+POINTS 8 float
+0.00000000e+00  -7.0e-02    0.0 
+3.33333333e-01  -7.0e-02    0.0 
+6.66666666e-01  -7.0e-02    0.0 
+1.00000000e+00  -7.0e-02    0.0 
+0.00000000e+00   7.0e-02    0.0 
+3.33333333e-01   7.0e-02    0.0 
+6.66666666e-01   7.0e-02    0.0 
+1.00000000e+00   7.0e-02    0.0
+
+CELLS 5 21
+4 0 1 5 4
+3 1 2 6
+3 6 1 5
+3 2 3 7
+3 7 2 6
+
+CELL_TYPES 5
+9
+5
+5
+5
+5
+
+POINT_DATA 8
+FIELD FieldPointData 1
+point_index 1 8 float
+0.0 1.0 2.0 3.0
+4.0 5.0 6.0 7.0
+
+CELL_DATA 5
+FIELD FieldCellData 1
+cell_index 1 5 float
+0.0 1.0 2.0
+3.0 4.0

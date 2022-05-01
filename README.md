@@ -14,7 +14,9 @@ Set up of surrogate models and order reduction for stochastic distributions
 ### Functions and tools
 
 * Custom tools:
-* Tools from [1], [2]
+  * stats_functions
+  * copula_gen_data 
+* Tools from [1], [2] for surrogate modeling
   * pyToolbox [1]
   * fit_(...).py, hierarchical_kriging, multifidelity_rbf, swiss_roll_test, base_classes [2]
 

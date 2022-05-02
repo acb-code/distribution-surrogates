@@ -285,8 +285,8 @@ def generate_goodness_of_fit_results(x_train, y_train, x_test, y_test, ind_train
     y_test_predicted_formatted = pca_destack(y_test_predicted.T, num_samples, num_dists)
     y_train_predicted_formatted = pca_destack(y_train_predicted.T, num_samples, num_dists)
     # condition predicted ecdfs to be statistically consistent ---------------------------------------------------------
-    y_test_predict_ecdfx = np.apply_along_axis(sf.get_monotonic_ecdf_aprrox, axis=1, arr=y_test_predicted_formatted)
-    y_train_predict_ecdfx = np.apply_along_axis(sf.get_monotonic_ecdf_aprrox, axis=1, arr=y_train_predicted_formatted)
+    y_test_predict_ecdfx = np.apply_along_axis(sf.get_monotonic_ecdf_aprox, axis=1, arr=y_test_predicted_formatted)
+    y_train_predict_ecdfx = np.apply_along_axis(sf.get_monotonic_ecdf_aprox, axis=1, arr=y_train_predicted_formatted)
     # organize true data for statistical comparison --------------------------------------------------------------------
     # samples
     samples_train_true = samples_full[ind_train,:,:]

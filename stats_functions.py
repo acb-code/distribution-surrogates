@@ -70,7 +70,7 @@ def get_ecdf_x(arr):
     return ecdf.x[1:]
 
 
-def get_monotonic_ecdf_aprrox(ecdfx_entries):
+def get_monotonic_ecdf_aprox(ecdfx_entries):
     """Make the entries in the ecdf monotonically increasing, for now simplified to np.maximum.accumulate"""
     # potentially could make more robust, start at first entry and work forward with nth order approx
     a = np.maximum.accumulate(ecdfx_entries)

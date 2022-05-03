@@ -11,6 +11,7 @@ import openturns as ot
 import numpy as np
 from scipy import stats as st
 from sklearn.preprocessing import StandardScaler
+from doepy import build
 
 # custom functions
 import stats_functions as sf
@@ -42,7 +43,7 @@ class Simulation:
 
     Methods
     -------
-
+    See docstrings below
 
     """
     def __init__(self, input_vals, corr_rng_seed):
@@ -258,6 +259,58 @@ class Data:
         # todo - specify only the discrete ecdfs to get updated and leave the continuous ones
         self.get_scaled_ecdfs_from_samples()
         self.get_scaled_epdfs_from_samples()
+
+
+class Experiment:
+    """
+    Object to hold and operate the Simulation and Data classes to generate the
+    full dataset for a given experiment
+
+    Attributes
+    ----------
+
+    Methods
+    -------
+
+    """
+    def __init__(self, param_ranges=None, num_cases=1000):
+        self.param_ranges = param_ranges
+        self.num_cases = num_cases
+        self.doe_table = None
+        self.dataset = None
+        self.simulations = []
+        self.input_labels = []
+        self.num_inputs = None
+
+    def set_up_doe(self):
+        """Use the parameter ranges and number of cases to generate a design of experiments table"""
+        # labels are hardcoded for now, dictionary used by doepy package as lhc input
+        self.num_inputs = self.param_ranges.shape[0]
+        self.input_labels = []
+        doe_input_dict = dict()
+        for i in range(self.num_inputs):
+            self.input_labels.append('input' + str(i))
+            doe_input_dict[self.input_labels[i]] = self.param_ranges[i]
+        self.doe_table = build.space_filling_lhs(doe_input_dict, self.num_cases)
+
+    def set_up_simulations(self):
+        """Generate simulation objects with inputs based on each design of experiments case"""
+        self.simulations = []
+        for i in range(self.num_cases):
+            case_inputs = self.doe_table.iloc[i, :].to_numpy()
+            case_simulation = Simulation(case_inputs, 42)
+            self.simulations.append(case_simulation)
+
+    def generate_data(self):
+        """Generate data from all simulation objects and compile into Data object"""
+
+
+
+
+
+
+
+
 
 
 

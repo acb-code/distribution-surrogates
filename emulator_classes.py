@@ -5,6 +5,7 @@
 # Author: Alex Braafladt
 #
 # Version: v1 Initial creation 5/2/2022
+#          v2 Added Experiment class 5/3/2022
 
 # imports
 import openturns as ot

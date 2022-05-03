@@ -273,14 +273,17 @@ class Experiment:
     -------
 
     """
-    def __init__(self, param_ranges=None, num_cases=1000):
+    def __init__(self, param_ranges=None, num_cases=1000, discrete_flags=None):
         self.param_ranges = param_ranges
         self.num_cases = num_cases
         self.doe_table = None
         self.dataset = None
+        self.data = None
         self.simulations = []
         self.input_labels = []
         self.num_inputs = None
+        self.num_stochastic_samples = None
+        self.discrete_flags = discrete_flags
 
     def set_up_doe(self):
         """Use the parameter ranges and number of cases to generate a design of experiments table"""
@@ -303,6 +306,14 @@ class Experiment:
 
     def generate_data(self):
         """Generate data from all simulation objects and compile into Data object"""
+        self.set_up_doe()
+        self.set_up_simulations()
+        self.num_stochastic_samples = 1000
+        dataset_list = [sim.get_joint_distribution_samples(self.num_stochastic_samples) for sim in self.simulations]
+        dataset_array = np.array(dataset_list)
+        self.dataset = dataset_array
+        self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags)
+        self.data.data_setup_from_samples()
 
 
 

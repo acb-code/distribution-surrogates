@@ -367,6 +367,22 @@ class Experiment:
         self.data.data_setup_from_samples()
 
 
+class Analysis:
+    """
+    Object to Data classes and use them to generate plots and goodness-of-fit metrics, and also
+    include a function to generate data to drive an interactive dash plot
+
+    Attributes
+    ----------
+
+    Methods
+    -------
+
+    """
+    def __init__(self, true_data=None, comparison_data=None, model_data=None):
+        self.true_data = true_data
+        self.comparison_data = comparison_data
+        self.model_data = model_data
 
 
 

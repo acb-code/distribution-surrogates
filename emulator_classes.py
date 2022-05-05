@@ -367,49 +367,7 @@ class Experiment:
         self.data.data_setup_from_samples()
 
 
-def calc_ks(true_sample_arr, approx_sample_arr):
-    """Calculate the KS metric - based on input 3d arrays of samples"""
-    ks_metric_holder = np.ones((true_sample_arr.shape[0], 1, true_sample_arr.shape[2]))
-    for i in range(true_sample_arr.shape[0]):
-        for j in range(true_sample_arr.shape[2]):
-            ks_m, ks_p = st.ks_2samp(true_sample_arr[i, :, j], approx_sample_arr[i, :, j])
-            ks_metric_holder[i, 0, j] = ks_m
-    return ks_metric_holder
 
-
-def calc_js(true_epdf_arr, approx_epdf_arr):
-    """Calculate the JS metric - based on input 3d arrays of epdf probs with same bins"""
-    js_metric_holder = np.ones((true_epdf_arr.shape[0], 1, true_epdf_arr.shape[2]))
-    for i in range(true_epdf_arr.shape[0]):
-        for j in range(true_epdf_arr.shape[2]):
-            js_d = sf.compute_js_dist(true_epdf_arr[i, :, j], approx_epdf_arr[i, :, j])
-            js_metric_holder[i, 0, j] = js_d
-    return js_metric_holder
-
-
-class Analysis:
-    """
-    Object to Data classes and use them to generate plots and goodness-of-fit metrics, and also
-    include a function to generate data to drive an interactive dash plot
-
-    Attributes
-    ----------
-
-    Methods
-    -------
-
-    """
-    def __init__(self, true_data=None, comparison_data=None, model_data=None):
-        self.true_data = true_data
-        self.comparison_data = comparison_data
-        self.model_data = model_data
-        self.model_ks = None
-        self.model_js = None
-        self.comparison_ks = None
-        self.comparison_js = None
-
-    def calc_differencing_metrics(self):
-        """Calculate the KS or JS differencing metrics based comparing Data objects"""
 
 
 

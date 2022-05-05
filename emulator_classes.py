@@ -213,6 +213,13 @@ class Data:
             self.scaled_samples = cpgen.reshape_data_after_scaling(scaled_samples_in_scaler_format,
                                                                    self.samples.shape[0])
 
+    def descale_samples(self):
+        """Descale the scaled_samples and save"""
+        scaled_samples_reshaped_for_scaler = cpgen.format_data_for_global_scaler(self.scaled_samples)
+        descaled_samples_in_scaler_shape = self.scaler.inverse_transform(scaled_samples_reshaped_for_scaler)
+        self.samples = cpgen.reshape_data_after_scaling(descaled_samples_in_scaler_shape,
+                                                        self.scaled_samples.shape[0])
+
     def get_scaled_ecdfs_from_samples(self):
         """Transform scaled samples into ecdf format - requires scaled samples set up"""
         ecdf_y = sf.get_ecdf_y(self.scaled_samples[0,:,0])

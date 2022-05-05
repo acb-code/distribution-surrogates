@@ -186,13 +186,13 @@ class Data:
         """Round the samples which correspond to discrete distributions (assuming all discrete as int)
         -requires samples set up"""
         if self.discrete_flags is not None:
-            list_of_dist_data = np.split(self.samples, axis=2)
+            list_of_dist_data = np.split(self.scaled_samples, self.scaled_samples.shape[2], axis=2)
             rounded_data_list = []
             for (flag, data_slice) in zip(self.discrete_flags, list_of_dist_data):
                 if flag:
                     data_slice = np.around(data_slice)
                 rounded_data_list.append(data_slice)
-            self.samples = np.stack(rounded_data_list, axis=2)
+            self.scaled_samples = np.squeeze(np.stack(rounded_data_list, axis=2))
 
     def scale_samples(self):
         """Scale samples based on custom scaler input or else sklearn StandardScaler - requires samples set up"""
@@ -249,12 +249,12 @@ class Data:
         """Perform operations to flesh out data starting from a set of ecdfs"""
         raw_ecdf_x_vals = self.scaled_ecdfs[1]
         conditioned_ecdf_vals = np.apply_along_axis(sf.get_monotonic_ecdf_aprox, axis=1, arr=raw_ecdf_x_vals)
-        example_ecdf_y = sf.get_ecdf_y(conditioned_ecdf_vals[0,:,0])
+        example_ecdf_y = self.scaled_ecdfs[0]
         undiscretized_samples = np.apply_along_axis(sf.sample_ecdf, arr=conditioned_ecdf_vals,
                                                     axis=1, num_samples=conditioned_ecdf_vals.shape[1],
                                                     ecdfy=example_ecdf_y)
         # round the discrete samples
-        self.samples = undiscretized_samples
+        self.scaled_samples = undiscretized_samples
         self.round_samples()
         # update the ecdfx values for the discrete distributions
         # todo - specify only the discrete ecdfs to get updated and leave the continuous ones

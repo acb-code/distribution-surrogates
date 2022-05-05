@@ -277,6 +277,27 @@ class Data:
             print("Ignoring rounding because no discrete distributions flagged")
             return arr
 
+    def condition_input_ecdfs(self):
+        """Enforce monotonic increase and discrete distribution levels"""
+        example_ecdf_y = self.scaled_ecdfs[0]
+        raw_ecdf_x_vals = self.scaled_ecdfs[1]
+        # enforce monotonically increasing
+        self.scaled_ecdfs = (example_ecdf_y,
+                             np.apply_along_axis(sf.get_monotonic_ecdf_aprox, axis=1, arr=raw_ecdf_x_vals))
+        # enforce discrete distributions as integer levels
+        descaled_ecdfx = self.scale_3darray(self.scaled_ecdfs[1], scale_flag=False)
+        descaled_rounded_ecdf = self.round_3darray(descaled_ecdfx)
+        scaled_rounded_data = self.scale_3darray(descaled_rounded_ecdf, scale_flag=True)
+        self.scaled_ecdfs = (example_ecdf_y, scaled_rounded_data)
+
+    def sample_input_ecdfs(self):
+        """Fill out scaled samples attribute based on sampling scaled ecdf attribute"""
+        local_samples = np.apply_along_axis(sf.sample_ecdf, arr=self.scaled_ecdfs[1],
+                                                  axis=1, num_samples=self.scaled_ecdfs[1].shape[1],
+                                                  ecdfy=self.scaled_ecdfs[0])
+        self.scaled_samples = local_samples
+        self.samples = self.scale_3darray(local_samples, scale_flag=False)
+
     def data_setup_from_samples(self):
         """Perform operations to flesh out data starting from a set of samples"""
         # assuming samples already rounded
@@ -286,22 +307,8 @@ class Data:
 
     def data_setup_from_ecdfs(self):
         """Perform operations to flesh out data starting from a set of ecdfs"""
-        example_ecdf_y = self.scaled_ecdfs[0]
-        raw_ecdf_x_vals = self.scaled_ecdfs[1]
-        # make sure ecdfx is monotonically increasing
-        self.scaled_ecdfs = (example_ecdf_y,
-                             np.apply_along_axis(sf.get_monotonic_ecdf_aprox, axis=1, arr=raw_ecdf_x_vals))
-        descaled_ecdfx = self.scale_3darray(self.scaled_ecdfs[1], scale_flag=False)
-        descaled_rounded_ecdf = self.round_3darray(descaled_ecdfx)
-        scaled_rounded_data = self.scale_3darray(descaled_rounded_ecdf, scale_flag=True)
-        self.scaled_ecdfs = (example_ecdf_y, scaled_rounded_data)
-        discretized_samples = np.apply_along_axis(sf.sample_ecdf, arr=self.scaled_ecdfs[1],
-                                                axis=1, num_samples=self.scaled_ecdfs[1].shape[1],
-                                                ecdfy=example_ecdf_y)
-        self.scaled_samples = discretized_samples
-        # update the ecdfx values for the discrete distributions
-        # todo - specify only the discrete ecdfs to get updated and leave the continuous ones
-        self.get_scaled_ecdfs_from_samples()
+        self.condition_input_ecdfs()
+        self.sample_input_ecdfs()
         self.get_scaled_epdfs_from_samples()
 
 

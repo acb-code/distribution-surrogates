@@ -242,9 +242,9 @@ class Data:
             epdf_probs = np.zeros_like(self.scaled_samples)
             for i in range(epdf_bins.shape[0]):
                 for j in range(epdf_bins.shape[2]):
-                    bins = bins_to_use[i,:,j]
-                    epdf_bins = bins
-                    epdf_probs = sf.get_epdf_probs(arr=self.scaled_samples[i,:,j], bins=bins)
+                    bins = bins_to_use[i, :, j]
+                    epdf_bins[i, :, j] = bins
+                    epdf_probs = sf.get_epdf_probs(arr=self.scaled_samples[i, :, j], bins=bins)
         self.scaled_epdfs = (epdf_bins, epdf_probs)
 
     def scale_3darray(self, arr, scale_flag=True):
@@ -324,10 +324,10 @@ class Experiment:
     -------
 
     """
-    def __init__(self, param_ranges=None, num_cases=1000, discrete_flags=None):
+    def __init__(self, param_ranges=None, num_cases=1000, discrete_flags=None, custom_bins=None, custom_doe=None):
         self.param_ranges = param_ranges
         self.num_cases = num_cases
-        self.doe_table = None
+        self.doe_table = custom_doe
         self.dataset = None
         self.data = None
         self.simulations = []
@@ -335,17 +335,22 @@ class Experiment:
         self.num_inputs = None
         self.num_stochastic_samples = None
         self.discrete_flags = discrete_flags
+        self.custom_bins = custom_bins
+        self.num_stochastic_samples = 1000
 
     def set_up_doe(self):
         """Use the parameter ranges and number of cases to generate a design of experiments table"""
         # labels are hardcoded for now, dictionary used by doepy package as lhc input
-        self.num_inputs = self.param_ranges.shape[0]
-        self.input_labels = []
-        doe_input_dict = dict()
-        for i in range(self.num_inputs):
-            self.input_labels.append('input' + str(i))
-            doe_input_dict[self.input_labels[i]] = self.param_ranges[i]
-        self.doe_table = build.space_filling_lhs(doe_input_dict, self.num_cases)
+        if self.doe_table is None:
+            self.num_inputs = self.param_ranges.shape[0]
+            self.input_labels = []
+            doe_input_dict = dict()
+            for i in range(self.num_inputs):
+                self.input_labels.append('input' + str(i))
+                doe_input_dict[self.input_labels[i]] = self.param_ranges[i]
+            self.doe_table = build.space_filling_lhs(doe_input_dict, self.num_cases)
+        else:
+            print("Using custom DOE table")
 
     def set_up_simulations(self):
         """Generate simulation objects with inputs based on each design of experiments case"""
@@ -359,11 +364,13 @@ class Experiment:
         """Generate data from all simulation objects and compile into Data object"""
         self.set_up_doe()
         self.set_up_simulations()
-        self.num_stochastic_samples = 1000
         dataset_list = [sim.get_joint_distribution_samples(self.num_stochastic_samples) for sim in self.simulations]
         dataset_array = np.array(dataset_list)
         self.dataset = dataset_array
-        self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags)
+        if self.custom_bins is None:
+            self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags)
+        else:
+            self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags, custom_bins=self.custom_bins)
         self.data.data_setup_from_samples()
 
 

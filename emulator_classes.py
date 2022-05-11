@@ -199,6 +199,7 @@ class Data:
         if self.custom_scaler is None:
             # use new sklearn standard scaler
             self.scaler = StandardScaler()
+            self.custom_scaler = self.scaler
             # format to scale across full parametric dataset (scale to the full range)
             samples_formatted_for_scaler = cpgen.format_data_for_global_scaler(self.samples)
             self.scaler.fit(samples_formatted_for_scaler)
@@ -324,7 +325,8 @@ class Experiment:
     -------
 
     """
-    def __init__(self, param_ranges=None, num_cases=1000, discrete_flags=None, custom_bins=None, custom_doe=None):
+    def __init__(self, param_ranges=None, num_cases=1000, discrete_flags=None, custom_bins=None, custom_doe=None,
+                 custom_scaler=None):
         self.param_ranges = param_ranges
         self.num_cases = num_cases
         self.doe_table = custom_doe
@@ -337,6 +339,7 @@ class Experiment:
         self.discrete_flags = discrete_flags
         self.custom_bins = custom_bins
         self.num_stochastic_samples = 1000
+        self.custom_scaler = custom_scaler
 
     def set_up_doe(self):
         """Use the parameter ranges and number of cases to generate a design of experiments table"""
@@ -368,9 +371,17 @@ class Experiment:
         dataset_array = np.array(dataset_list)
         self.dataset = dataset_array
         if self.custom_bins is None:
-            self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags)
+            if self.custom_scaler is None:
+                self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags)
+            else:
+                self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags,
+                                 custom_scaler=self.custom_scaler)
         else:
-            self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags, custom_bins=self.custom_bins)
+            if self.custom_scaler is None:
+                self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags, custom_bins=self.custom_bins)
+            else:
+                self.data = Data(samples=self.dataset, discrete_flags=self.discrete_flags, custom_bins=self.custom_bins,
+                                 custom_scaler=self.custom_scaler)
         self.data.data_setup_from_samples()
 
 

@@ -103,10 +103,10 @@ def get_epdf_bins(arr,bins):
 def get_ecdf_sample(ecdfx, ecdfy):
     """ECDF to sample - given ecdf points, use linear interpolation to sample the ecdf once"""
     # start from a random uniform sample
-    ui = np.random.uniform(0.0,1.0)
+    ui = np.random.uniform(0.0, 1.0)
     # get indices of ecdf y values around sample
-    ind_hi = np.argmax(ecdfy>=ui)
-    ind_lo = np.argmax(ecdfy>=ui)-1
+    ind_hi = np.argmax(ecdfy >= ui)
+    ind_lo = np.argmax(ecdfy >= ui) - 1
     # get ecdf "response" values around ui
     resp_hi = ecdfy[ind_hi]
     resp_lo = ecdfy[ind_lo]
@@ -114,8 +114,8 @@ def get_ecdf_sample(ecdfx, ecdfy):
     inpt_hi = ecdfx[ind_hi]
     inpt_lo = ecdfx[ind_lo]
     # fit linear model for continuous approx of ecdf "x" given ui as ecdf "y"
-    slope = (inpt_hi-inpt_lo)/(resp_hi-resp_lo)
-    intercept = inpt_hi - slope*resp_hi
+    slope = (inpt_hi-inpt_lo) / (resp_hi-resp_lo)
+    intercept = inpt_hi - slope * resp_hi
     sample = slope * ui + intercept
     return sample
 

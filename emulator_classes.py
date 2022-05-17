@@ -413,8 +413,7 @@ def get_initial_diff_df(arr, test_type_label='ks', cross_val_label='train', comp
 
 class Analysis:
     """
-    Object to Data classes and use them to generate plots and goodness-of-fit metrics, and also
-    include a function to generate data to drive an interactive dash plot
+    Provides statistical comparison for true, model, and comparison data
 
     Attributes
     ----------

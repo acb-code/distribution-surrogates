@@ -517,3 +517,42 @@ def plot_model_statistical_consistency(df_metrics, title_str, closeness_met_tup,
     g.axes[0][1].add_artist(at)
     g.figure.savefig(figsavedir+'\\'+title_str+'.png', format='png')
     return g
+
+
+def plot_selected_distribution(first_data, second_data, case_num=0, dist_num=0):
+    """Function to plot selected distribution representations"""
+    # select set of data to be on plot
+    # ecdf
+    selected_first_ecdfx = first_data.scaled_ecdfs[1][case_num, :, dist_num]
+    selected_second_ecdfx = second_data.scaled_ecdfs[1][case_num, :, dist_num]
+    ecdfy = first_data.scaled_ecdfs[0]
+    # epdf
+    selected_first_epdfp = first_data.scaled_epdfs[1][case_num, :, dist_num]
+    selected_second_epdfp = second_data.scaled_epdfs[1][case_num, :, dist_num]
+    selected_epdfbins = first_data.scaled_epdfs[0][case_num, :, dist_num]
+    # samples
+    selected_first_samples = first_data.scaled_samples[case_num, :, dist_num]
+    selected_second_samples = second_data.scaled_samples[case_num, :, dist_num]
+    # plot
+    fig3, ax3 = plt.subplots(3, 1, figsize=(8, 6), constrained_layout=True)
+    ax = ax3.ravel()
+    # ecdf
+    ax[0].plot(selected_first_ecdfx, ecdfy, label='first')
+    ax[0].plot(selected_second_ecdfx, ecdfy, label='second')
+    ax[0].set_title("ECDF comparison for case " + str(case_num) + " distribution " + str(dist_num))
+    ax[0].legend()
+    ax[0].set_yticks(())
+    # histogram
+    ax[1].hist(selected_first_samples, bins=selected_epdfbins, alpha=0.3, histtype='stepfilled', label='first')
+    ax[1].hist(selected_second_samples, bins=selected_epdfbins, alpha=0.3, histtype='stepfilled', label='second')
+    ax[1].set_yticks(())
+    ax[1].set_title('Sample comparison')
+    # epdf
+    center = (selected_epdfbins[:-1] + selected_epdfbins[1:]) / 2.
+    width = (selected_epdfbins[1] - selected_epdfbins[0]) * 0.8
+    ax[2].bar(center, selected_first_epdfp, width=width, alpha=0.3)
+    ax[2].bar(center, selected_second_epdfp, width=width, alpha=0.3)
+    ax[2].set_yticks(())
+    ax[2].set_title('Empirical PDF')
+
+plot_selected_distribution(data_test, data_comparison_test, 0, 11)

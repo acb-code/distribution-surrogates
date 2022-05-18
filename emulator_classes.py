@@ -17,7 +17,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import datetime as dt
+import time
 from matplotlib.offsetbox import AnchoredText
+
+# modeling code
+from fit_pca import *
+from sklearn.metrics import mean_squared_error, r2_score
 
 # custom functions
 import stats_functions as sf
@@ -478,7 +483,7 @@ class Analysis:
                         height=8, aspect=1.2, inner='quartile', col='cross_val', kind='violin')
         (g.set_axis_labels("", "")
           .set_xticklabels(["Kolmogorov-Smirnov\nmetric", "Jensen-Shannon\ndistance"], size=17)
-          .set(ylim=(0,1))
+          .set(ylim=(0, 1))
           ._legend.remove())
         plt.legend(fontsize=18)
         # add ks metric results annotation
@@ -496,19 +501,239 @@ class Analysis:
         return g
 
 
+# set up class for Model
+def set_up_stats_anno_artist(stat_percent=-1., location='best'):
+    """Return the object for adding ks and js annotation summaries"""
+    anno = "{:.0f}".format(stat_percent) +\
+           '% of modeled distributions\nas close as farthest true'
+    at = AnchoredText(anno, prop=dict(size=14), frameon=True, loc=location)
+    at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+    return at
 
 
+def set_up_regression_anno_artist(anno, location='best'):
+    """Set up artist for regression metric annotations"""
+    at = AnchoredText(anno, prop=dict(size=14), frameon=True, loc=location)
+    at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+    return at
 
 
+class Model:
+    """
+    Model object collecting ROM model, training, test, and comparison data, goodness-of-fit metrics, and also
+    includes a function to generate data to drive an interactive dash plot. Assumes a simple train/test cross
+    validation split
+
+    Base class
+
+    Attributes
+    ----------
+
+    Methods
+    -------
+
+    """
+    def __init__(self, train_set=None, test_set=None, input_ranges=None):
+        # training inputs
+        self.inputs_train = train_set['inputs']
+        self.true_data_train = train_set['true_data']
+        self.comparison_data_train = train_set['comparison_data']
+        # test inputs
+        self.inputs_test = test_set['inputs']
+        self.true_data_test = test_set['true_data']
+        self.comparison_data_test = test_set['comparison_data']
+        # model
+        self.input_ranges = input_ranges
+        self.model = None
+        # modeling results
+        self.model_data_train = None
+        self.model_data_test = None
+        # regression metrics
+        self.mse_train = None
+        self.ave_mse_train = None
+        self.mse_test = None
+        self.ave_mse_test = None
+        self.r2_train = None
+        self.ave_r2_train = None
+        self.r2_test = None
+        self.ave_r2_test = None
+        # statistical consistency analysis
+        self.analysis_train = None
+        self.analysis_test = None
+        self.stats_consistency_df = None
+
+    def setup_data_from_prediction(self, ecdfx_predict_arr, train_flag=None):
+        """Convert raw predictions into Data object"""
+        if train_flag == 'train':
+            start_time = time.time()
+            self.model_data_train = Data(ecdf_vals=(self.true_data_train.scaled_ecdfs[0], ecdfx_predict_arr),
+                                         discrete_flags=self.true_data_train.discrete_flags,
+                                         scaler=self.true_data_train.scaler,
+                                         custom_bins=self.true_data_train.scaled_epdfs[0])
+            self.model_data_train.data_setup_from_ecdfs()
+            end_time = time.time()
+            print("Time to setup train Data object: {:.2f} seconds".format(end_time - start_time))
+        elif train_flag == 'test':
+            start_time = time.time()
+            self.model_data_test = Data(ecdf_vals=(self.true_data_test.scaled_ecdfs[0], ecdfx_predict_arr),
+                                        discrete_flags=self.true_data_test.discrete_flags,
+                                        scaler=self.true_data_test.scaler,
+                                        custom_bins=self.true_data_test.scaled_epdfs[0])
+            self.model_data_test.data_setup_from_ecdfs()
+            end_time = time.time()
+            print("Time to setup test Data object: {:.2f} seconds".format(end_time - start_time))
+        else:
+            print("Error with conversion from prediction to Data objects")
+
+    def setup_model_analysis_objects(self):
+        """Setup model Analysis objects based on Data objects having been set up"""
+        self.analysis_train = Analysis(true_data=self.true_data_train, model_data=self.model_data_train,
+                                       comparison_data=self.comparison_data_train, cross_val_type='train')
+        self.analysis_train.calc_differencing_metrics()
+        _ = self.analysis_train.get_differencing_df()
+        self.analysis_train.get_percent_reasonable()
+        self.analysis_test = Analysis(true_data=self.true_data_test, model_data=self.model_data_test,
+                                      comparison_data=self.comparison_data_test, cross_val_type='test')
+        self.analysis_test.calc_differencing_metrics()
+        _ = self.analysis_test.get_differencing_df()
+        self.analysis_test.get_percent_reasonable()
+        # combine dfs for use later to plot
+        self.stats_consistency_df = pd.concat([self.analysis_train.differencing_df,
+                                               self.analysis_test.differencing_df],
+                                              axis=0)
+
+    def calculate_regression_metrics(self):
+        """Calculate the regression metrics for training and test data"""
+        # calculate MSE and R2
+        self.mse_train = mean_squared_error(cpgen.pca_stack(self.true_data_train.scaled_ecdfs[1]),
+                                            cpgen.pca_stack(self.model_data_train.scaled_ecdfs[1]),
+                                            multioutput='raw_values')
+        self.mse_test = mean_squared_error(cpgen.pca_stack(self.true_data_test.scaled_ecdfs[1]),
+                                           cpgen.pca_stack(self.model_data_test.scaled_ecdfs[1]),
+                                           multioutput='raw_values')
+        self.ave_mse_train = mean_squared_error(cpgen.pca_stack(self.true_data_train.scaled_ecdfs[1]),
+                                                cpgen.pca_stack(self.model_data_train.scaled_ecdfs[1]),
+                                                multioutput='uniform_average')
+        self.ave_mse_test = mean_squared_error(cpgen.pca_stack(self.true_data_test.scaled_ecdfs[1]),
+                                               cpgen.pca_stack(self.model_data_test.scaled_ecdfs[1]),
+                                               multioutput='uniform_average')
+        # r-squared
+        self.r2_train = r2_score(cpgen.pca_stack(self.true_data_train.scaled_ecdfs[1]),
+                                 cpgen.pca_stack(self.model_data_train.scaled_ecdfs[1]),
+                                 multioutput='raw_values')
+        self.r2_test = r2_score(cpgen.pca_stack(self.true_data_test.scaled_ecdfs[1]),
+                                cpgen.pca_stack(self.model_data_test.scaled_ecdfs[1]),
+                                multioutput='raw_values')
+        self.ave_r2_train = r2_score(cpgen.pca_stack(self.true_data_train.scaled_ecdfs[1]),
+                                     cpgen.pca_stack(self.model_data_train.scaled_ecdfs[1]),
+                                     multioutput='uniform_average')
+        self.ave_r2_test = r2_score(cpgen.pca_stack(self.true_data_test.scaled_ecdfs[1]),
+                                    cpgen.pca_stack(self.model_data_test.scaled_ecdfs[1]),
+                                    multioutput='uniform_average')
+
+    def plot_cross_val_stats_consistency_results(self):
+        """Plot the regression and statistical consistency metrics on a cross val grid"""
+        # plot the statistical metrics
+        g = sns.catplot(data=self.stats_consistency_df, x='test_type', y='metric', hue='comparison',
+                        palette='Set3', height=10, aspect=0.7, inner='quartile', col='cross_val',
+                        kind='violin')
+        (g.set_axis_labels("", "")
+          .set_xticklabels(["Kolmogorov-Smirnov metric", "Jensen-Shannon distance"], size=17)
+          .set_titles("{col_name}", size=20)
+          .set(ylim=(0, 1))
+          ._legend.remove())
+        plt.legend(fontsize=18)
+        # set up annotations
+        # train
+        ks_at = set_up_stats_anno_artist(self.analysis_train.percent_reasonable_model_ks, 'center left')
+        g.axes[0][0].add_artist(ks_at)
+        js_at = set_up_stats_anno_artist(self.analysis_train.percent_reasonable_model_js, 'center right')
+        g.axes[0][0].add_artist(js_at)
+        # test
+        ks_at = set_up_stats_anno_artist(self.analysis_test.percent_reasonable_model_ks, 'center left')
+        g.axes[0][1].add_artist(ks_at)
+        js_at = set_up_stats_anno_artist(self.analysis_test.percent_reasonable_model_js, 'center right')
+        g.axes[0][1].add_artist(js_at)
+        # regression
+        # train
+        anno = "MSE = {:.3f}\nR2 = {:.3f}".format(self.ave_mse_train, self.ave_r2_train)
+        at = set_up_regression_anno_artist(anno, location='upper center')
+        g.axes[0][0].add_artist(at)
+        # test
+        anno = "MSE = {:.3f}\nR2 = {:.3f}".format(self.ave_mse_test, self.ave_r2_test)
+        at = set_up_regression_anno_artist(anno, location='upper center')
+        g.axes[0][1].add_artist(at)
 
 
+def format_data_for_asdl_models(data_obj):
+    """Return data from Data object in format needed for input to ASDL model class"""
+    return cpgen.pca_stack(data_obj.scaled_ecdfs[1]).T
 
 
+class AsdlModel(Model):
+    """
+    Model object for the ASDL specific ROM setup with inherited attributes and methods from Model
 
+    Attributes
+    ----------
 
+    Methods
+    -------
 
+    """
+    def __init__(self, train_set=None, test_set=None, input_ranges=None, model_settings=None):
+        Model.__init__(self, train_set, test_set, input_ranges)
+        self.asdl_model_settings = model_settings
 
+    def reformat_data_predicted_by_asdl_model(self, arr, train_flag=None):
+        """Return data from model predictions re-formatted to 3d-array format needed for Data objects"""
+        if train_flag == 'train':
+            return cpgen.pca_destack(arr.T, self.true_data_train.scaled_ecdfs[1].shape[1],
+                                     self.true_data_train.scaled_ecdfs[1].shape[2])
+        elif train_flag == 'test':
+            return cpgen.pca_destack(arr.T, self.true_data_test.scaled_ecdfs[1].shape[1],
+                                     self.true_data_test.scaled_ecdfs[1].shape[2])
+        else:
+            print("train_flag not set, check formatting setup")
+            return arr.T
 
+    def setup_model_pca_rom(self):
+        """Set up the ASDL model using the settings provided"""
+        self.model = FitPCA(**self.asdl_model_settings)
+        self.model.read_training_params(self.inputs_train, param_ranges=self.input_ranges)
+        training_snapshots = format_data_for_asdl_models(self.true_data_train)
+        self.model.read_training_snapshots(training_snapshots)
 
+    def train_model(self):
+        """Train the model"""
+        start_time = time.time()
+        self.model.execute()
+        end_time = time.time()
+        print("Time to train model: {:.2f} seconds".format(end_time - start_time))
 
+    def format_asdl_predictions(self, predicted_arr, train_flag=None):
+        """Format the snapshot predictions back to the format for Data objects"""
+        if train_flag == 'train':
+            return cpgen.pca_destack(predicted_arr.T, self.true_data_train.scaled_ecdfs[1].shape[1],
+                                     self.true_data_train.scaled_ecdfs[1].shape[2])
+        elif train_flag == 'test':
+            return cpgen.pca_destack(predicted_arr.T, self.true_data_test.scaled_ecdfs[1].shape[1],
+                                     self.true_data_test.scaled_ecdfs[1].shape[2])
+        else:
+            print("Error with formatting data from prediction to prepare for Data setup")
+            return predicted_arr.T
 
+    def predict_from_training(self):
+        """Use the model to predict in the training and test sets"""
+        start_time = time.time()
+        # train
+        predictions_train = self.model.predict(self.inputs_train)
+        formatted_predictions_train = self.format_asdl_predictions(predictions_train, train_flag='train')
+        self.setup_data_from_prediction(formatted_predictions_train, train_flag='train')
+        # test
+        predictions_test = self.model.predict(self.inputs_test)
+        formatted_predictions_test = self.format_asdl_predictions(predictions_test, train_flag='test')
+        self.setup_data_from_prediction(formatted_predictions_test, train_flag='test')
+        # timing
+        end_time = time.time()
+        print("Time to predict training and test data from model: {:.2f} seconds".format(end_time - start_time))

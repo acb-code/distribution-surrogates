@@ -554,5 +554,3 @@ def plot_selected_distribution(first_data, second_data, case_num=0, dist_num=0):
     ax[2].bar(center, selected_second_epdfp, width=width, alpha=0.3)
     ax[2].set_yticks(())
     ax[2].set_title('Empirical PDF')
-
-plot_selected_distribution(data_test, data_comparison_test, 0, 11)

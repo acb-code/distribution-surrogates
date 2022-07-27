@@ -1,0 +1,17 @@
+# Development folders
+.idea/
+.env/
+.vscode/
+
+# Build folder
+build/
+
+# Cython outputs
+*.c
+*.pyd
+*.so
+*.html
+
+# Other Python filese
+*.pyc
+*.egg-info

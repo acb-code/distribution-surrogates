@@ -16,7 +16,7 @@ Set up of surrogate models and order reduction for stochastic distributions
   * stats_functions
   * copula_gen_data
   * emulator_classes
-* Tools from [1], [2] for surrogate modeling (awaiting separate release of these files to include in repository here)
+* Tools from [1], [2] for surrogate modeling
   * pyToolbox [1]
    * Requires [Visual Studio Compiler](https://visualstudio.microsoft.com/downloads/?q=build+tools#build-tools-for-visual-studio-2022), specifically, build tools for visual studio 2022, selecting at least the C++ library
   * fit_(...).py, hierarchical_kriging, multifidelity_rbf, swiss_roll_test, base_classes [2]
